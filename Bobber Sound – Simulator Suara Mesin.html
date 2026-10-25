@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bobber Sound – Simulator Suara Mesin</title>
+<style>
+:root{--bg:#f2f0ec;--fg:#1b1a18;--card:#fff;--mut:#6d6a64;--acc:#d9531e;--bd:#d8d4cc;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111110;--fg:#f1eee8;--card:#1c1b19;--mut:#9a958c;--acc:#ff6a2b;--bd:#35332f}}
+:root[data-theme="dark"]{--bg:#111110;--fg:#f1eee8;--card:#1c1b19;--mut:#9a958c;--acc:#ff6a2b;--bd:#35332f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+main{width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px}
+h1{font-size:20px;margin:0;letter-spacing:.5px}
+p.s{margin:2px 0 0;color:var(--mut);font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px}
+.gauge{position:relative;text-align:center}
+svg{width:100%;max-width:300px}
+.rpm{font-size:44px;font-weight:700;margin-top:-62px;font-variant-numeric:tabular-nums}
+.rpm small{display:block;font-size:12px;color:var(--mut);font-weight:500;letter-spacing:2px}
+.row{display:flex;gap:8px}
+.row button{flex:1}
+button{font:inherit;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:12px;padding:12px 8px;cursor:pointer}
+button.on{border-color:var(--acc);color:var(--acc);font-weight:600}
+#gas{width:100%;padding:34px 8px;font-size:18px;font-weight:700;background:var(--acc);color:#fff;border:0;border-radius:16px;letter-spacing:1px;touch-action:none}
+#gas:active,#gas.d{transform:scale(.98);filter:brightness(1.1)}
+#blar{padding:16px 8px;font-weight:600}
+label{font-size:13px;color:var(--mut);display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;accent-color:var(--acc)}
+#start{position:fixed;inset:0;background:var(--bg);z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+#start button{background:var(--acc);color:#fff;border:0;font-size:18px;font-weight:700;padding:18px 34px;border-radius:40px}
+</style>
+</head>
+<body>
+<div id="start">
+  <h1>BOBBER SOUND</h1>
+  <p class="s">Simulator suara mesin V-twin custom bobber.<br>Pakai headphone / speaker bagus agar bass terasa.</p>
+  <button id="go">NYALAKAN MESIN</button>
+</div>
+<main>
+  <div><h1>BOBBER SOUND</h1><p class="s">Tahan GAS untuk jalan, REM untuk berhenti. Gigi pindah otomatis.</p></div>
+  <div class="card gauge">
+    <svg viewBox="0 0 220 120"><path d="M20 110A90 90 0 0 1 200 110" fill="none" stroke="var(--bd)" stroke-width="14" stroke-linecap="round"/><path id="arc" d="M20 110A90 90 0 0 1 200 110" fill="none" stroke="var(--acc)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 300"/></svg>
+    <div class="rpm"><span id="sv">0</span><small>KM/J · <span id="rv">0</span> RPM</small></div>
+  </div>
+  <button id="gas">TAHAN UNTUK GAS</button>
+  <button id="brk" style="touch-action:none;padding:18px;font-weight:600">REM (TAHAN)</button>
+  <button id="blar">BLAR-BLAR!</button>
+  <div class="card" id="gr" style="text-align:center;font-weight:700;letter-spacing:2px">GIGI 1</div>
+  <div class="card row" id="modes"></div>
+  <div class="card"><button id="gps" style="width:100%">MODE GPS: MATI</button><p class="s" id="gst" style="margin-top:8px"></p><p class="s" id="gms"></p><button id="rs" style="width:100%;margin-top:8px">RESET ARAH SENSOR</button></div>
+  <div class="card"><label style="cursor:pointer"><input type="checkbox" id="io" checked style="accent-color:var(--acc);width:20px;height:20px"> Idle naik-turun</label></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px"><label>RPM min <input id="imn" type="range" min="600" max="2500" step="50" value="700"><b id="imnv">700</b></label><label>RPM maks <input id="imx" type="range" min="800" max="4000" step="50" value="2400"><b id="imxv">2400</b></label><label>Periode <input id="ipr" type="range" min="0.3" max="5" step="0.1" value="0.5"><b id="iprv">0.5</b> detik</label></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px"><label style="cursor:pointer"><input type="checkbox" id="dr" checked style="accent-color:var(--acc);width:20px;height:20px"> Idle derap kuda (dug-dug ... dug-dug)</label><label>Jarak dug-dug <input id="dgp" type="range" min="60" max="300" step="10" value="190"><b id="dgpv">190</b>°</label><label>RPM idle derap <input id="dgrr" type="range" min="350" max="1000" step="25" value="875"><b id="dgrv">875</b></label></div>
+  <div class="card"><label>Tenaga <input id="pw" type="range" min="40" max="140" step="5" value="40"><b id="pv">40</b>%</label></div>
+  <div class="card"><label>Batas <input id="lim" type="range" min="30" max="140" step="5" value="70"><b id="lv">70</b> km/j</label></div>
+  <div class="card"><label>Volume <input id="vol" type="range" min="0" max="1" step=".01" value="1"></label></div>
+</main>
+<script>
+const P={
+ bobber:{n:'Bobber Custom',f0:78,dec:38,noise:.5,nd:95,nlp:.2,drive:2.4,cut:2400,fire:[0,315],g:1},
+ harley:{n:'Harley Cruiser',f0:60,dec:27,noise:.3,nd:110,nlp:.11,drive:2.1,cut:1500,fire:[0,315],g:1.1,wob:.04,a2:.78,f2:.93,tick:.4,lope:1.7,fw:.75},
+ brong:{n:'Harley Bass',f0:50,dec:24,noise:.2,nd:100,nlp:.07,drive:1.7,cut:1100,fire:[0,315],g:1.25,bass:9,wob:.04,a2:.8,f2:.92,tick:.25,lope:1.5,fw:.7}
+};
+const IDLE=950,RED=5800,H=36,W=new Float32Array(37),FR=[.28,.47,.67,.85,1];
+let v=0,limit=70,KG=FR.map(f=>5000/(limit*f)),bl=false,bpk=3800,derap=true,dgap=190,dgr=875,idleOsc=true,imin=700,imax=2400,iper=.5,pw=.4,tp=0,sh=false,shT=0,gpsOn=false,gpsV=0,acc=0,pv=0,gid=null,brake=false,wn=0,wl=0,bassN=null,gear=1,cut=false,nextShift=0,ctx,proc,lp,shaper,master,sr,cur=P.harley,run=false,rpm=0,held=false,blip=false,thr=0,ph=0,last=0,nlp=0,voices=[];
+
+function curve(d){const c=new Float32Array(2048);for(let i=0;i<2048;i++){const x=i/1024-1;c[i]=Math.tanh(x*d)/Math.tanh(d)}return c}
+function spawn(o){if(voices.length<28)voices.push(Object.assign({age:0,vp:0},o))}
+
+function build(){
+ ctx=new (window.AudioContext||window.webkitAudioContext)();sr=ctx.sampleRate;
+ proc=ctx.createScriptProcessor(1024,0,1);
+ const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=32;
+ const bs=ctx.createBiquadFilter();bs.type='lowshelf';bs.frequency.value=150;bs.gain.value=cur.bass||5;bassN=bs;
+ const pk=ctx.createBiquadFilter();pk.type='peaking';pk.frequency.value=230;pk.Q.value=.9;pk.gain.value=4;
+ lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2400;lp.Q.value=.6;
+ const dl=ctx.createDelay(.05);dl.delayTime.value=.0042;
+ const fb=ctx.createGain();fb.gain.value=.32;
+ const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=900;
+ shaper=ctx.createWaveShaper();shaper.curve=curve(cur.drive);shaper.oversample='2x';
+ const l2=ctx.createBiquadFilter();l2.type='lowpass';l2.frequency.value=4200;l2.Q.value=.5;
+ const cp=ctx.createDynamicsCompressor();cp.threshold.value=-16;cp.ratio.value=4;cp.knee.value=10;cp.attack.value=.003;cp.release.value=.15;
+ master=ctx.createGain();master.gain.value=+vol.value;
+ proc.connect(hp);hp.connect(bs);bs.connect(pk);pk.connect(lp);
+ lp.connect(shaper);lp.connect(dl);dl.connect(fl);fl.connect(fb);fb.connect(dl);fl.connect(shaper);
+ shaper.connect(l2);l2.connect(cp);cp.connect(master);master.connect(ctx.destination);
+ proc.onaudioprocess=e=>{
+  const out=e.outputBuffer.getChannelData(0),n=out.length,p=cur,dt=n/sr;
+  tp+=(((held||blip)?1:0)-tp)*Math.min(1,((held||blip)?((blip&&!held)?12:2.2):6)*dt);
+  thr=gpsOn?(blip?1:((v<1||cut)?0:(acc>.8?1:(acc>-1?.45:0)))):(cut?0:tp);
+  const K=KG[gear-1],drive=held&&!cut;
+  const gal=derap&&v<3&&thr<.2,io=idleOsc&&thr<.15,rr=Math.max(14,14/iper),ID=io?(imin+imax)/2+(imax-imin)/2*Math.sin(6.2832*ctx.currentTime/iper):(gal?dgr:IDLE);
+  const fire=gal?[0,dgap]:p.fire;
+  const tgt=run?Math.min(RED,Math.max(ID+thr*1500,v*K,(bl&&blip)?bpk:0)):0;
+  const rp0=rpm;rpm+=(tgt-rpm)*Math.min(1,(tgt>rpm?(bl?9:(io?rr:(sh?14:7))):(bl?4.5:(io?rr:(sh?13:4))))*dt*(p.fw||1));
+  if(bl)rpm=Math.max(rp0-6500*dt,Math.min(rp0+9000*dt,rpm));
+  const r=rpm/RED,now=ctx.currentTime;
+  if(gpsOn){const fz=fOk&&performance.now()-mLast<500;
+   if(fz){v=Math.max(0,v+((Math.abs(aFs)<.15?0:aFs)*3.6+1.4*(gpsV-v))*dt);if(Math.abs(v-gpsV)>15)v=gpsV+Math.sign(v-gpsV)*15}
+   else v+=(gpsV-v)*Math.min(1,2*dt);
+   acc+=((v-pv)/dt-acc)*Math.min(1,(fz?6:3)*dt);pv=v}else{const Kn=K*limit/110;const eff=(drive?Math.max(0,Math.min(1,(limit-v)/4)):0)*tp*pw;
+   const T=.75+.35*Math.min(1,rpm/3500)-.35*Math.max(0,(rpm-5000)/800);
+   const a=eff*T*Kn*.14-.0001*v*v-(v>0?.4+(drive?0:.018*Kn):0)-(v>limit+1?4:0)-(brake?16:0);
+   v=Math.max(0,v+a*dt);
+   if(v<1&&gear>1&&!drive){gear=1;$('gr').textContent='GIGI 1'}}
+  const sq=(v/140)*(v/140);
+  const fc=Math.max(rpm,1)/120;let sw=0;
+  for(let h=1;h<=H;h++){const f=h*fc;W[h]=Math.pow(h,-.3)*Math.exp(-f/(450+rpm*.4))*(1+1.5*Math.exp(-Math.pow((f-190)/100,2)));sw+=W[h]}
+  for(let h=1;h<=H;h++)W[h]/=sw;
+  const tm=(.3+.45*r)*(.55+.45*thr)*(bl?1.3:1);
+  if(run&&now>nextShift){
+   if(gpsOn){if(gear<5&&v*KG[gear-1]>5000){nextShift=now+.9;shift(1)}else if(gear>1&&v*KG[gear-2]<3600){nextShift=now+.7;shift(-1)}}
+   else if(thr>.3&&rpm>5100&&gear<5){nextShift=now+.9;shift(1)}else if(rpm<1800&&gear>1){nextShift=now+.7;shift(-1)}}
+  lp.frequency.setTargetAtTime(p.cut+rpm*.5,ctx.currentTime,.03);
+  if(thr<.08&&rpm>3200&&Math.random()<dt*3*r)spawn({amp:.6,f0:62,dec:40,noise:.8,nd:45});
+  for(let i=0;i<n;i++){
+   last=ph;wl+=.0008*((Math.random()*2-1)-wl);ph+=rpm*(1+(p.wob||.02)*wl*60*(1-Math.min(1,r*2.5)))*6/sr;if(ph>=720)ph-=720;
+   if(rpm>60)for(let k=0;k<fire.length;k++){const a=fire[k];
+    if(a===0?ph<last:(last<a&&ph>=a))
+     {spawn({amp:(bl?1.35:1)*(.55+.45*thr)*(1+(Math.random()-.5)*(.1+.3*(1-Math.min(1,r*3)))*(p.lope||1))*(k?(p.a2||.92):1.06),f0:p.f0*(1+r*.6)*((k&&p.f2)||1),dec:p.dec*(1+r*.8),noise:p.noise*(.6+.8*thr)*(bl?1.6:1),nd:p.nd});spawn({amp:(.5+.5*Math.random())*(1-r*.4),f0:0,dec:100,noise:(p.tick||.12)*(.5+.5*thr),nd:700})}}
+   nlp+=p.nlp*((Math.random()*2-1)-nlp);wn+=.05*((Math.random()*2-1)-wn);
+   const th=ph*.00872665;let tone=0;
+   for(let k=0;k<fire.length;k++){const c1=Math.cos(th-fire[k]*.0174533);let p2=1,p1=c1,acc=W[1]*c1;
+    for(let h=2;h<=H;h++){const cu=2*c1*p1-p2;acc+=W[h]*cu;p2=p1;p1=cu}
+    tone+=acc*(k?.85:1)}
+   let s=0;
+   for(let j=voices.length-1;j>=0;j--){const v=voices[j],t=v.age/sr;
+    if(t>Math.min(.25,Math.max(v.f0>0?5/v.dec:0,5/v.nd))){voices.splice(j,1);continue}
+    v.vp+=6.2832*v.f0*(1+1.1*Math.exp(-t*70))/sr;
+    s+=v.amp*(Math.exp(-t*v.dec)*(Math.sin(v.vp)+.55*Math.sin(2*v.vp)+.3*Math.sin(3*v.vp))*.6+nlp*3*v.noise*Math.exp(-t*v.nd));
+    v.age++;}
+   out[i]=(s*.45+tone*tm*.5+nlp*(.03+.12*r*(.3+.7*thr))*2+wn*sq*1.5)*p.g*(.75+.45*r);
+  }
+ };
+}
+
+const $=id=>document.getElementById(id);
+function clunk(v,m){m=m||1;const t=ctx.currentTime,R=ctx.sampleRate;
+ const out=ctx.createGain();out.gain.value=v;const lpf=ctx.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=3000*m;out.connect(lpf);lpf.connect(master);
+ const nb=(dur,dec)=>{const b=ctx.createBuffer(1,Math.ceil(R*dur),R),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(R*dec));return b};
+ const burst=(buf,type,f,q,g)=>{const s=ctx.createBufferSource();s.buffer=buf;const fl=ctx.createBiquadFilter();fl.type=type;fl.frequency.value=f*m;fl.Q.value=q;const gn=ctx.createGain();gn.gain.value=g;s.connect(fl);fl.connect(gn);gn.connect(out);s.start(t)};
+ burst(nb(.02,.003),'bandpass',2200,1,.9);
+ burst(nb(.08,.02),'lowpass',520,.7,2.2);
+ burst(nb(.12,.035),'bandpass',1150,5,.8);
+ const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.setValueAtTime(100*m,t);o.frequency.exponentialRampToValueAtTime(52*m,t+.07);og.gain.setValueAtTime(.7,t);og.gain.exponentialRampToValueAtTime(.001,t+.09);o.connect(og);og.connect(out);o.start(t);o.stop(t+.1)}
+function clunkV2(v){const t=ctx.currentTime,R=ctx.sampleRate;
+ const lpf=ctx.createBiquadFilter();lpf.type='lowpass';lpf.frequency.value=2600;lpf.connect(master);
+ const b=ctx.createBuffer(1,R*.05,R),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(R*.008));
+ const s=ctx.createBufferSource();s.buffer=b;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=750;bp.Q.value=2.2;
+ const sg=ctx.createGain();sg.gain.value=1.6*v;s.connect(bp);bp.connect(sg);sg.connect(lpf);s.start(t);
+ [[330,.22],[870,.14],[1490,.07]].forEach(([f,a])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f;g.gain.setValueAtTime(a*v,t);g.gain.exponentialRampToValueAtTime(.0005,t+.07);o.connect(g);g.connect(lpf);o.start(t);o.stop(t+.08)});
+ const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(65,t+.06);og.gain.setValueAtTime(.5*v,t);og.gain.exponentialRampToValueAtTime(.001,t+.08);o.connect(og);og.connect(lpf);o.start(t);o.stop(t+.09)}
+function clunkOld(v){const t=ctx.currentTime,R=ctx.sampleRate;
+ const o=ctx.createOscillator(),og=ctx.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(55,t+.09);
+ og.gain.setValueAtTime(.9*v,t);og.gain.exponentialRampToValueAtTime(.001,t+.12);o.connect(og);og.connect(master);o.start(t);o.stop(t+.13);
+ const b=ctx.createBuffer(1,R*.03,R),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(R*.006));
+ const s=ctx.createBufferSource();s.buffer=b;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1400;bp.Q.value=.8;
+ const sg=ctx.createGain();sg.gain.value=.8*v;s.connect(bp);bp.connect(sg);sg.connect(master);s.start(t)}
+function shift(d){if(!run)return;const ng=gear+d;if(ng<1||ng>5)return;gear=ng;$('gr').textContent='GIGI '+gear;
+ if(d>0){sh=true;clearTimeout(shT);shT=setTimeout(()=>sh=false,480);cut=true;
+  if(rpm>3800){setTimeout(()=>spawn({amp:.75,f0:66,dec:45,noise:.9,nd:50}),30);setTimeout(()=>spawn({amp:.4,f0:62,dec:48,noise:.6,nd:55}),85)}
+  setTimeout(()=>clunk(1,1),110);setTimeout(()=>clunk(.45,.75),165);setTimeout(()=>cut=false,240)}
+ else{sh=true;clearTimeout(shT);shT=setTimeout(()=>sh=false,420);cut=true;
+  if(rpm>3800)setTimeout(()=>spawn({amp:.45,f0:62,dec:48,noise:.6,nd:55}),25);
+  setTimeout(()=>clunk(.9,.9),50);setTimeout(()=>clunk(.4,.7),105);
+  setTimeout(()=>{cut=false;blip=true},60);setTimeout(()=>blip=false,230)}}
+const modes=$('modes');
+Object.keys(P).forEach(k=>{const b=document.createElement('button');b.textContent=P[k].n;b.dataset.k=k;if(P[k]===cur)b.className='on';
+ b.onclick=()=>{cur=P[k];if(shaper)shaper.curve=curve(cur.drive);if(bassN)bassN.gain.value=cur.bass||5;[...modes.children].forEach(c=>c.className=c===b?'on':'')};modes.appendChild(b)});
+$('go').onclick=()=>{if(!ctx)build();ctx.resume();rpm=180;run=true;$('start').style.display='none'};
+$('vol').oninput=e=>{if(master)master.gain.value=+e.target.value};
+$('lim').oninput=e=>{limit=+e.target.value;KG=FR.map(f=>5000/(limit*f));$('lv').textContent=limit};
+$('pw').oninput=e=>{pw=+e.target.value/100;$('pv').textContent=e.target.value};
+$('io').onchange=e=>{idleOsc=e.target.checked};
+$('imn').oninput=e=>{imin=+e.target.value;if(imax<imin+100){imax=imin+100;$('imx').value=imax;$('imxv').textContent=imax}$('imnv').textContent=imin};
+$('imx').oninput=e=>{imax=+e.target.value;if(imin>imax-100){imin=imax-100;$('imn').value=imin;$('imnv').textContent=imin}$('imxv').textContent=imax};
+$('ipr').oninput=e=>{iper=+e.target.value;$('iprv').textContent=iper.toFixed(1)};
+$('dr').onchange=e=>{derap=e.target.checked};
+$('dgp').oninput=e=>{dgap=+e.target.value;$('dgpv').textContent=dgap};
+$('dgrr').oninput=e=>{dgr=+e.target.value;$('dgrv').textContent=dgr};
+let P0=null,gTp=0,gGv=0,gA=0,gAt=0,mOn=false,mt=0,mLast=0,gx=0,gy=0,gz=0,F=[0,0,0],fOk=false,aFs=0,mErr='';
+function onMotion(e){const ig=e.accelerationIncludingGravity;if(!ig||ig.x==null)return;
+ const t=performance.now(),first=!mt,dtm=first?0:Math.min(.1,(t-mt)/1000);mt=t;mLast=t;
+ if(first){gx=ig.x;gy=ig.y;gz=ig.z}else{gx+=.02*(ig.x-gx);gy+=.02*(ig.y-gy);gz+=.02*(ig.z-gz)}
+ const ac=e.acceleration,l=(ac&&ac.x!=null)?[ac.x,ac.y,ac.z]:[ig.x-gx,ig.y-gy,ig.z-gz];
+ const gm=Math.hypot(gx,gy,gz)||1,ux=gx/gm,uy=gy/gm,uz=gz/gm,dp=l[0]*ux+l[1]*uy+l[2]*uz;
+ const h=[l[0]-dp*ux,l[1]-dp*uy,l[2]-dp*uz];
+ if(gpsOn&&t-gAt<1500&&Math.abs(gA)>.4&&gpsV>5){F[0]+=h[0]*gA*dtm;F[1]+=h[1]*gA*dtm;F[2]+=h[2]*gA*dtm}
+ const fm=Math.hypot(F[0],F[1],F[2]);fOk=fm>2;
+ if(fOk){aFs+=.08*((h[0]*F[0]+h[1]*F[1]+h[2]*F[2])/fm-aFs)}else aFs=0}
+async function startMotion(){if(mOn)return;mErr='';
+ try{if(typeof DeviceMotionEvent==='undefined'){mErr='Sensor gerak tidak didukung di perangkat ini.';return}
+  if(DeviceMotionEvent.requestPermission){const r=await DeviceMotionEvent.requestPermission();if(r!=='granted'){mErr='Izin sensor gerak ditolak (memakai GPS saja).';return}}
+  mt=0;F=[0,0,0];fOk=false;aFs=0;mLast=performance.now();addEventListener('devicemotion',onMotion);mOn=true}
+ catch(er){mErr='Sensor gerak tidak bisa diakses (memakai GPS saja).'}}
+function stopMotion(){removeEventListener('devicemotion',onMotion);mOn=false;fOk=false;aFs=0;F=[0,0,0]}
+$('rs').onclick=()=>{F=[0,0,0];fOk=false;aFs=0};
+function onPos(p){const c=p.coords;let s=c.speed;
+ if(s==null&&P0){const dLa=(c.latitude-P0.la)*Math.PI/180,dLo=(c.longitude-P0.lo)*Math.PI/180,a=Math.sin(dLa/2)**2+Math.cos(P0.la*Math.PI/180)*Math.cos(c.latitude*Math.PI/180)*Math.sin(dLo/2)**2,t=(p.timestamp-P0.t)/1000;s=t>0?2*6371000*Math.asin(Math.sqrt(a))/t:0}
+ P0={la:c.latitude,lo:c.longitude,t:p.timestamp};
+ {const nv=Math.max(0,(s||0)*3.6),tn=p.timestamp,dg=(tn-gTp)/1000;gpsV=nv<2?0:nv;if(gTp&&dg>.2&&dg<3){gA=(gpsV-gGv)/3.6/dg;gAt=performance.now()}gGv=gpsV;gTp=tn}
+ $('gst').textContent='GPS aktif · akurasi ±'+Math.round(c.accuracy)+' m · GAS/REM dinonaktifkan'}
+$('gps').onclick=()=>{const b=$('gps'),st=$('gst');
+ if(gid!==null){stopMotion();navigator.geolocation.clearWatch(gid);gid=null;gpsOn=false;P0=null;b.textContent='MODE GPS: MATI';b.classList.remove('on');st.textContent='';return}
+ if(!navigator.geolocation){st.textContent='GPS tidak didukung di browser ini.';return}
+ startMotion();st.textContent='Meminta izin lokasi…';
+ try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}
+ gid=navigator.geolocation.watchPosition(p=>{if(!gpsOn){gpsOn=true;b.textContent='MODE GPS: AKTIF';b.classList.add('on')}onPos(p)},
+  er=>{navigator.geolocation.clearWatch(gid);gid=null;gpsOn=false;b.textContent='MODE GPS: MATI';b.classList.remove('on');st.textContent=er.code===1?'Izin lokasi ditolak atau diblokir di halaman ini.':'Sinyal GPS belum tersedia, coba di tempat terbuka.'},
+  {enableHighAccuracy:true,maximumAge:0,timeout:20000})};
+const brk=$('brk');brk.addEventListener('pointerdown',e=>{e.preventDefault();brake=true});['pointerup','pointerleave','pointercancel'].forEach(t=>brk.addEventListener(t,()=>{brake=false}));
+const g=$('gas');
+const on=e=>{e.preventDefault();held=true;g.classList.add('d')},off=()=>{held=false;g.classList.remove('d')};
+g.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(t=>g.addEventListener(t,off));
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();held=true;g.classList.add('d')}});
+addEventListener('keyup',e=>{if(e.code==='Space')off()});
+function burble(n){if(rpm<3000)return;for(let i=0;i<n;i++)setTimeout(()=>spawn({amp:.45+Math.random()*.4,f0:58+Math.random()*14,dec:40+Math.random()*10,noise:.6+Math.random()*.5,nd:45+Math.random()*15}),i*(45+Math.random()*50))}
+$('blar').onclick=()=>{if(!run||bl)return;bl=true;let t=0;const n=2+Math.floor(Math.random()*3);
+ for(let i=0;i<n;i++){const last=i===n-1,pk=3600+i*(1700/Math.max(1,n-1))+Math.random()*350,dur=(last?300:130)+Math.random()*110;
+  setTimeout(()=>{bpk=pk;blip=true},t);t+=dur;
+  setTimeout(()=>{blip=false;burble(last?3:1)},t);t+=80+Math.random()*90}
+ setTimeout(()=>bl=false,t+500)};
+(function tick(){const f=Math.min(1,rpm/RED);$('arc').setAttribute('stroke-dasharray',(f*282.7)+' 300');$('rv').textContent=Math.round(rpm/10)*10;$('sv').textContent=Math.round(v);$('sv').style.color=(v>=limit-1&&v>5)?'var(--acc)':'';{const m=!gpsOn?'':mOn?((performance.now()-mLast>3000)?'Sensor gerak tidak mengirim data (mungkin diblokir halaman ini). Memakai GPS saja.':(fOk?'Sensor gerak aktif: GPS dan akselerometer digabung.':'Sensor gerak: belajar arah gerak… akselerasi atau rem beberapa kali.')):mErr;if($('gms').textContent!==m)$('gms').textContent=m}
+$('gas').style.opacity=gpsOn?.4:1;$('brk').style.opacity=gpsOn?.4:1;requestAnimationFrame(tick)})();
+</script>
+</body>
+</html>
